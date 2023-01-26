@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es-es">
+<head>
+  <meta charset="utf-8">
+  <title>Celestiaga - Personal color recognizer powered by machine learning</title>
+
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, viewport-fit=cover">
+
+  <style>
+    .container {
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      width: 100%;
+    }
+    .v-application__wrap {
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+
+    [v-cloak] {
+      display: none !important
+    }
+    /* Hide Vue while loading */
+  </style>
+</head>
+<body>
+<div id="contenedor-de-mi-app">
+  <v-app
+    v-cloak
+    :style="{ backgroundColor: `rgb(${currentColorR}, ${currentColorG}, ${currentColorB})` }"
+  >
+    <div class="container">
+
+      <v-form
+        ref="form"
+        style="width: 100%;"
+        @submit.prevent="sendNewColor"
+      >
+        <v-text-field
+          v-model="newColor"
+          label="¿Qué color es este?"
+          class="shrink"
+          required
+        ></v-text-field>
+
+        <div class="text-center">
+          <v-chip
+            v-for="eachColor in prevColors"
+            class="ma-2"
+            close
+            color="green"
+            outlined
+            @click:close="chip3 = false"
+          >
+            {{ eachColor }}
+          </v-chip>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <v-btn
+            class="mr-4"
+            type="submit"
+          >
+            Enviar
+          </v-btn>
+        </div>
+      </v-form>
+    </div>
+
+  </v-app>
+</div>
+<script src="/dist/script.js"></script>
+</body>
+</html>
