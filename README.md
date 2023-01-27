@@ -16,20 +16,18 @@ npm install
 ## Run in local environment for development
 Set PORT environment varieble. Otherwise will use port 3000 as default
 
-Start the server in one terminal
+Start the server and set webpack in watch mode
 ```console
+npm run dev
+```
+
+## Setup in remote environment
+```console
+npm run build
 npm run start
 ```
 
-Set webpack to bundle the scripts watching changes
+## Build for static site hosting
 ```console
-npm run watch
+npm run build:static
 ```
-
-## Build in remote environment
-Before npm run start
-```console
-npm run build
-```
-
-.

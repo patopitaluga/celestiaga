@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "webpack",
+    "build:static": "webpack",
+    "postbuild:static": "rm -rf build && mkdir -p build && cp -a ./public/. ./build/ && cp ./views/index.html ./build/",
     "dev": "npm-run-all --parallel watch start",
     "start": "node server.mjs",
     "watch": "NODE_ENV='development' node node_modules/webpack-cli/bin/cli.js --watch"
