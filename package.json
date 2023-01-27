@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "webpack",
+    "dev": "npm-run-all --parallel watch start",
     "start": "node server.mjs",
     "watch": "NODE_ENV='development' node node_modules/webpack-cli/bin/cli.js --watch"
   },
@@ -30,6 +31,7 @@
     "css-loader": "^6.7.3",
     "deepmerge": "^4.2.2",
     "mini-css-extract-plugin": "^2.7.2",
+    "npm-run-all": "^4.1.5",
     "sass": "~1.32",
     "sass-loader": "^13.2.0",
     "style-loader": "^3.3.1",
