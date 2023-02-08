@@ -6,6 +6,14 @@
 
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, viewport-fit=cover">
 
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#00d3ff">
+  <meta name="msapplication-TileColor" content="#00d3ff">
+  <meta name="theme-color" content="#00d3ff">
+
   <style>
     .container {
       max-width: 600px;
@@ -30,13 +38,13 @@
 <div id="contenedor-de-mi-app">
   <v-app
     v-cloak
-    :style="{ backgroundColor: `rgb(${currentColorR}, ${currentColorG}, ${currentColorB})` }"
+    :style="{ backgroundColor: `rgb(${vrCurrentColorR}, ${vrCurrentColorG}, ${vrCurrentColorB})` }"
   >
     <div class="container">
 
       <v-alert
         title="La IA predice…"
-        :text="iaPrediction"
+        :text="vrPrediction"
         style="margin-bottom: 15px;"
       ></v-alert>
 
@@ -44,10 +52,10 @@
         <v-form
           ref="form"
           style="width: 100%;"
-          @submit.prevent="sendNewColor"
+          @submit.prevent="mtdSendNewColor"
         >
           <v-text-field
-            v-model="newColor"
+            v-model="vrSelectedColorName"
             label="¿Cómo describís a este color?"
             class="shrink"
             required
@@ -55,12 +63,12 @@
 
           <div class="text-center">
             <v-chip
-              v-for="eachColor in userInsertedColors"
+              v-for="eachColor in vrUserInsertedColors"
               class="ma-2"
               close
-              :style="{ backgroundColor: `rgb(${eachColor.r}, ${eachColor.g}, ${eachColor.b})`,color: fgDarkOrLight(eachColor.r, eachColor.g, eachColor.b)}"
+              :style="{ backgroundColor: `rgb(${eachColor.r}, ${eachColor.g}, ${eachColor.b})`,color: mtdFgDarkOrLight(eachColor.r, eachColor.g, eachColor.b)}"
               outlined
-              @click="clickColorPill(eachColor)"
+              @click="mtdHandleClickColorPill(eachColor)"
             >
               {{ eachColor.name }}
             </v-chip>
@@ -82,11 +90,22 @@
       </canvas>
     </div>
 
+    <v-tooltip style="position: absolute; right: 12px; top: 0;">
+      <template v-slot:activator="{ on, attrs }">
+        {{ vrHoverColor }}
+      </template>
+      <span>Tooltip</span>
+    </v-tooltip>
+
     <div style="position: absolute; right: 12px; bottom: 12px; font-size: 12px;">
       🦊 The Fox - HIAM - 2023
     </div>
   </v-app>
+
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+
 <script src="./dist/script.js"></script>
 <!---
 The Fox for: Angus MacGyver Hackerspace - Jan/2023
