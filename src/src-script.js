@@ -2,94 +2,177 @@ import * as Vue from 'vue/dist/vue.esm-bundler.js';
 
 import 'vuetify/styles'; // Global CSS has to be imported
 
+// Frontend components
 import { VAlert } from 'vuetify/lib/components/VAlert/index.mjs';
 import { VApp } from 'vuetify/lib/components/VApp/index.mjs';
 import { VChip } from 'vuetify/lib/components/VChip/index.mjs';
 import { VTextField } from 'vuetify/lib/components/VTextField/index.mjs';
 import { VForm } from 'vuetify/lib/components/VForm/index.mjs';
 import { VBtn } from 'vuetify/lib/components/VBtn/index.mjs';
-
-import { HslColorSpace } from './hsl-color-space.js';
-
+import { VTooltip } from 'vuetify/lib/components/VTooltip/index.mjs';
 import { createVuetify } from 'vuetify';
 
-const commonColors = [
-  { name: 'negro',    r: 0,   g: 0,   b: 0,   },
-  { name: 'gris',     r: 128, g: 128, b: 128, },
-  { name: 'blanco',   r: 255, g: 255, b: 255, },
-  { name: 'marrón',   r: 128, g: 0,   b: 0,   },
-  { name: 'rojo',     r: 255, g: 0,   b: 0,   },
-  { name: 'violeta',  r: 128, g: 0,   b: 128, },
-  { name: 'fucsia',   r: 255, g: 0,   b: 255, },
-  { name: 'verde',    r: 0,   g: 128, b: 0,   },
-  { name: 'amarillo', r: 255, g: 255, b: 0,   },
-  { name: 'azul',     r: 0,   g: 0,   b: 255, },
-];
+// Utility to create the canvas palette.
+import { HslColorSpace } from './hsl-color-space.js';
+
+const tfKnnClassifier = knnClassifier.create();
+
+/**
+ * Predict new color name considering which one of the list is the closest (not using ML). Used as a "control result".
+ * @param {number} r -
+ * @param {number} g -
+ * @param {number} b -
+ * @param {array} colorsListParam -
+ */
+const predictByClosest = (r, g, b, colorsListParam) => {
+  const commonColors = [
+    { name: 'negro',    r: 0,   g: 0,   b: 0,   },
+    { name: 'gris',     r: 128, g: 128, b: 128, },
+    { name: 'blanco',   r: 255, g: 255, b: 255, },
+    { name: 'marrón',   r: 128, g: 0,   b: 0,   },
+    { name: 'rojo',     r: 255, g: 0,   b: 0,   },
+    { name: 'violeta',  r: 128, g: 0,   b: 128, },
+    { name: 'fucsia',   r: 255, g: 0,   b: 255, },
+    { name: 'verde',    r: 0,   g: 128, b: 0,   },
+    { name: 'amarillo', r: 255, g: 255, b: 0,   },
+    { name: 'azul',     r: 0,   g: 0,   b: 255, },
+  ];
+
+  const colorsList = colorsListParam.length > 0 ? colorsListParam : commonColors;
+  let minDist = 99999999;
+  let foundCol = '';
+  colorsList.forEach((eachCommonColor) => {
+    const dist = HslColorSpace.euclideanDistance([r, g, b], [eachCommonColor.r, eachCommonColor.g, eachCommonColor.b]);
+    if (dist < minDist) {
+      foundCol = eachCommonColor.name;
+      minDist = dist;
+    }
+  });
+  return foundCol;
+};
 
 const app = Vue.createApp({
   setup: function() {
-    const newColor = Vue.ref('');
-    const iaPrediction = Vue.ref('…');
-    const currentColorR = Vue.ref(Math.floor(Math.random() * 255));
-    const currentColorG = Vue.ref(Math.floor(Math.random() * 255));
-    const currentColorB = Vue.ref(Math.floor(Math.random() * 255));
-    const userInsertedColors = Vue.ref([]);
+    const vrSelectedColorName = Vue.ref('');
+    const vrHoverColor = Vue.ref(' ');
+    const vrPrediction = Vue.ref('…');
+    const vrCurrentColorR = Vue.ref(Math.floor(Math.random() * 255));
+    const vrCurrentColorG = Vue.ref(Math.floor(Math.random() * 255));
+    const vrCurrentColorB = Vue.ref(Math.floor(Math.random() * 255));
+    const vrUserInsertedColors = Vue.ref([]);
 
-    const predict = (r, g, b) => {
-      const colorsList = (userInsertedColors.value.length) ? userInsertedColors.value : commonColors;
-      let minDist = 99999999;
-      let foundCol = '';
-      colorsList.forEach((eachCommonColor) => {
-        const dist = HslColorSpace.euclideanDistance([r, g, b], [eachCommonColor.r, eachCommonColor.g, eachCommonColor.b]);
-        if (dist < minDist) {
-          foundCol = eachCommonColor.name;
-          minDist = dist;
+    let theCanvas;
+
+    const makeAPrediction = () => {
+      vrPrediction.value = '…';
+
+      const newColorTensor = tf.tensor([[vrCurrentColorR.value, vrCurrentColorG.value, vrCurrentColorB.value, ]]);
+      tfKnnClassifier.predictClass(newColorTensor)
+        .then((result) => {
+          console.log('Prediction for: ', vrCurrentColorR.value, vrCurrentColorG.value, vrCurrentColorB.value);
+          console.log(result);
+          vrPrediction.value = result.label;
+        });
+
+      // Control
+      /* vrPrediction.value = predictByClosest(
+        vrCurrentColorR.value,
+        vrCurrentColorG.value,
+        vrCurrentColorB.value,
+        vrUserInsertedColors.value
+      ); */
+    };
+
+    const mtdSendNewColor = () => {
+      if (vrSelectedColorName.value !== '') {
+        const thisColorTensor = tf.tensor([[vrCurrentColorR.value, vrCurrentColorG.value, vrCurrentColorB.value, ]]);
+
+        const foundIndex = vrUserInsertedColors.value.findIndex((_) => _.name === vrSelectedColorName.value);
+
+        tfKnnClassifier.addExample(thisColorTensor, vrSelectedColorName.value);
+        if (foundIndex > -1) {
+        } else {
+          // HslColorSpace.createCanvasPalette(theCanvas, 200);
+          const { canvasX, canvasY, } = HslColorSpace.markColorInPalette(theCanvas, vrCurrentColorR.value, vrCurrentColorG.value, vrCurrentColorB.value);
+
+          vrUserInsertedColors.value = [
+            ...vrUserInsertedColors.value,
+            {
+              name: vrSelectedColorName.value,
+              r: vrCurrentColorR.value,
+              g: vrCurrentColorG.value,
+              b: vrCurrentColorB.value,
+              canvasX,
+              canvasY,
+            }
+          ];
         }
-      });
-      return foundCol;
-    };
-
-    const sendNewColor = () => {
-      if (newColor.value !== '') {
-        if (!userInsertedColors.value.some((_) => _.name === newColor.value))
-          userInsertedColors.value = [...userInsertedColors.value, { name: newColor.value, r: currentColorR.value, g: currentColorG.value, b: currentColorB.value, }];
-        newColor.value = '';
+        vrSelectedColorName.value = '';
       }
-      currentColorR.value = Math.floor(Math.random() * 255);
-      currentColorG.value = Math.floor(Math.random() * 255);
-      currentColorB.value = Math.floor(Math.random() * 255);
-      iaPrediction.value = '…';
-      HslColorSpace.createCanvasPalette(200);
-      HslColorSpace.markColorInPalette(currentColorR.value, currentColorG.value, currentColorB.value);
 
-      iaPrediction.value = predict(currentColorR.value, currentColorG.value, currentColorB.value);
+      // Establish new color
+      vrCurrentColorR.value = Math.floor(Math.random() * 255);
+      vrCurrentColorG.value = Math.floor(Math.random() * 255);
+      vrCurrentColorB.value = Math.floor(Math.random() * 255);
+
+      makeAPrediction(vrCurrentColorR.value, vrCurrentColorR.value, vrCurrentColorR.value);
     };
 
-    const clickColorPill = (_) => {
-      newColor.value = _;
-      sendNewColor();
+    /**
+     *
+     */
+    const mtdHandleClickColorPill = (_) => {
+      vrSelectedColorName.value = _;
+      mtdSendNewColor();
     };
 
-    const fgDarkOrLight = (r, g, b) =>
+    const mtdFgDarkOrLight = (r, g, b) =>
       (r * .299 + g * .587 + b * .114 > 186) ? '#000' : '#fff';
 
     Vue.onMounted(() => {
-      HslColorSpace.createCanvasPalette(200);
-      HslColorSpace.markColorInPalette(currentColorR.value, currentColorG.value, currentColorB.value);
+      theCanvas = document.getElementById('thecanvas');
 
-      iaPrediction.value = predict(currentColorR.value, currentColorG.value, currentColorB.value);
+      HslColorSpace.createCanvasPalette(theCanvas, 200);
+
+      theCanvas.addEventListener('mousemove', (event) => {
+        const mouseX = event.clientX - theCanvas.offsetLeft;
+        const mouseY = event.clientY - theCanvas.offsetTop;
+        const markRadius = 2;
+        vrUserInsertedColors.value.forEach((eachColorMarked) => {
+          if (
+            mouseX > eachColorMarked.canvasX - markRadius &&
+            mouseX < eachColorMarked.canvasX + markRadius &&
+            mouseY > eachColorMarked.canvasY - markRadius &&
+            mouseY < eachColorMarked.canvasY + markRadius
+          )
+            vrHoverColor.value = eachColorMarked.name;
+        });
+        //console.log(event.clientX, event.clientY)
+      });
+
+      // HslColorSpace.markColorInPalette(theCanvas, vrCurrentColorR.value, vrCurrentColorG.value, vrCurrentColorB.value);
+
+      // control
+      /* vrPrediction.value = predictByClosest(
+        vrCurrentColorR.value,
+        vrCurrentColorG.value,
+        vrCurrentColorB.value,
+        vrUserInsertedColors.value
+      );*/
     });
 
     return {
-      clickColorPill,
-      fgDarkOrLight,
-      currentColorR,
-      currentColorG,
-      currentColorB,
-      sendNewColor,
-      userInsertedColors,
-      newColor,
-      iaPrediction,
+      mtdFgDarkOrLight,
+      mtdHandleClickColorPill,
+      mtdSendNewColor,
+
+      vrCurrentColorB,
+      vrCurrentColorG,
+      vrCurrentColorR,
+      vrHoverColor,
+      vrSelectedColorName,
+      vrPrediction,
+      vrUserInsertedColors,
     };
   },
 });
@@ -106,6 +189,7 @@ const vuetify = createVuetify({
     VTextField,
     VForm,
     VBtn,
+    VTooltip,
   },
   directives,
 });

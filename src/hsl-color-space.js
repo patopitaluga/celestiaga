@@ -27,23 +27,21 @@ export const HslColorSpace = {
   /**
    *
    * @param {number} size -
-   * @param {number} markedR -
-   * @param {number} markedG -
-   * @param {number} markedB -
    */
-  createCanvasPalette: (size) => {
+  createCanvasPalette: (theCanvas, size) => {
+    if (!theCanvas) throw new Error('Missing "theCanvas" param in createCanvasPalette function.');
+
     const bottom = size * size * 4;
     const hueStep = 360 / size;
     const satStep = 200 / size;
     const hsbColor = { h: 0, s: 100, b: 0, };
     let row = size;
 
-    const canvas = document.getElementById('thecanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = theCanvas.getContext('2d', { willReadFrequently: true });
 
-    canvas.width = canvas.height = size;
+    theCanvas.width = theCanvas.height = size;
 
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, theCanvas.width, theCanvas.height);
 
     while (row--) {
       let col = size;
@@ -64,33 +62,55 @@ export const HslColorSpace = {
       hsbColor.b += satStep;
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(
+      imageData,
+      0, // destination x
+      0  // destination y
+    );
   },
 
-  euclideanDistance: (col1, col2) => {
-    const deltaR = col1[0] - col2[0];
-    const deltaG = col1[1] - col2[1];
-    const deltaB = col1[2] - col2[2];
+  /**
+   * @param {array} position1 -
+   * @param {array} position2 -
+   * @param {number} - the distance.
+   */
+  euclideanDistance: (position1, position2) => {
+    const deltaR = position1[0] - position2[0];
+    const deltaG = position1[1] - position2[1];
+    const deltaB = position1[2] - position2[2];
     return deltaR * deltaR + deltaG * deltaG + deltaB * deltaB;
   },
 
-  markColorInPalette: (r, g, b) => {
-    const canvas = document.getElementById('thecanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  /**
+   *
+   * @param {number} r -
+   * @param {number} g -
+   * @param {number} b -
+   * @returns {object} - { canvasX, canvasY }
+   */
+  markColorInPalette: (theCanvas, r, g, b) => {
+    if (!theCanvas) throw new Error('Missing "theCanvas" param in markColorInPalette function.');
+
+    const ctx = theCanvas.getContext('2d', { willReadFrequently: true });
 
     let minDist = 99999999;
-    for (let y = canvas.height; y >= 0; y--) {
-      for (let x = canvas.width; x >= 0; x--) {
+    for (let y = theCanvas.height; y >= 0; y--) {
+      for (let x = theCanvas.width; x >= 0; x--) {
         const data = ctx.getImageData(x, y, 1, 1).data;
         minDist = Math.min(minDist, HslColorSpace.euclideanDistance([r, g, b], [data[0], data[1], data[2]]));
       }
     }
     let match = false;
-    for (let y = canvas.height; y >= 0; y--) {
-      for (let x = canvas.width; x >= 0; x--) {
+    let matchX = -1;
+    let matchY = -1;
+    for (let y = theCanvas.height; y >= 0; y--) {
+      for (let x = theCanvas.width; x >= 0; x--) {
         if (!match) {
           const data = ctx.getImageData(x, y, 1, 1).data;
           if (HslColorSpace.euclideanDistance([r, g, b], [data[0], data[1], data[2]]) === minDist) {
+            matchX = x;
+            matchY = y;
+
             ctx.beginPath();
             ctx.arc(x, y, 3, 0, 2 * Math.PI);
             ctx.strokeStyle = (HslColorSpace.euclideanDistance([r, g, b], [0, 0, 0]) > 50000) ? '#000' : '#fff';
@@ -100,5 +120,11 @@ export const HslColorSpace = {
         }
       }
     }
+    if (!match) return {}
+
+    return {
+      canvasX: matchX,
+      canvasY: matchY,
+    };
   },
 };

@@ -33,3 +33,15 @@ npm run start
 ```console
 npm run build:static
 ```
+
+------
+
+IA classification type: Multi-Class Classification
+Documentation: https://machinelearningmastery.com/types-of-classification-in-machine-learning/
+Possible algorithms:
+
+- k-Nearest Neighbors
+- Decision Trees
+- Naive Bayes
+- Random Forest
+- Gradient Boosting
